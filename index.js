@@ -16,11 +16,14 @@ var term = require( 'terminal-kit' ).terminal ;
 //     return ret.join("\n");
 
 const API_URL = "http://diamonds.etimo.se/api/boards/1";
-const BOT_AVATARS = ["🤖", "🦁", "🐙", "🦑", "🦀", "🐌", "🐥", "🦞", "🐭", "🐹", "🐰", "🐶", "🐺", "🦊", "🐵", "🐸", "🙊", "🐯", "🦁", "🐮", "🐷", "🐻", "🐼", "🐲", "🐨", "🦄"];
+// const BOT_AVATARS = ["🤖", "🦁", "🐙", "🦑", "🦀", "🐌", "🐥", "🦞", "🐭", "🐹", "🐰", "🐶", "🐺", "🦊", "🐵", "🐸", "🙊", "🐯", "🦁", "🐮", "🐷", "🐻", "🐼", "🐲", "🐨", "🦄"];
+const BOT_AVATARS = ["1", "2", "3", "4", "5"];
 const botAvatarForId = {};
 const avatarsInUse = {};
 const carryingDiamonds = {};
 const points = {};
+const timeLeft = {};
+let maxLengthName = 0;
 
 function clear() {
     // console.log('\033c');
@@ -37,6 +40,14 @@ function getBase(board, x, y) {
 
 function getDiamond(board, x, y) {
     return board.diamonds.find(d => d.x === x && d.y === y);
+}
+
+function getDiamondButton(board, x, y) {
+    return board.gameObjects.find(d => d.name === "DiamondButton" && d.x === x && d.y === y);
+}
+
+function getTeleporter(board, x, y) {
+    return board.gameObjects.find(d => d.name === "Teleporter" && d.x === x && d.y === y);
 }
 
 function getNextAvailableAvatar() {
@@ -62,8 +73,10 @@ function render(board) {
       for(var x = 0; x < board.width; x++) {
         let spacesLeft = cellSize;
         const bot = getBot(board, x, y);
-        const base = getBot(board, x, y);
+        const base = getBase(board, x, y);
         const diamond = getDiamond(board, x, y);
+        const teleporter = getTeleporter(board, x, y);
+        const button = getDiamondButton(board, x, y);
         if (base) {
             term("B");
             spacesLeft -= 1;
@@ -75,10 +88,26 @@ function render(board) {
 
             points[c] = bot.score;
             carryingDiamonds[c] = bot.diamonds;
+            timeLeft[c] = bot.millisecondsLeft;
+            maxLengthName = Math.max(maxLengthName, bot.botName);
         }
         if (diamond) {
-            const c = diamond.points === 1 ? "🔹" : "🔶";
-            term(c);
+            const c = "*"; //diamond.points === 1 ? "*" : "🔶";
+            if (diamond.points === 1) {
+                term.brightBlue(c);
+            } else {
+                term.red(c);
+            }
+            spacesLeft -= c.length;
+        }
+        if (button) {
+            const c = "#";
+            term.red(c);
+            spacesLeft -= c.length;
+        }
+        if (teleporter) {
+            const c = "O";
+            term.magenta(c);
             spacesLeft -= c.length;
         }
         term("".padEnd(spacesLeft, " "));
@@ -88,13 +117,11 @@ function render(board) {
     term("┗" + "".padEnd(board.width * cellSize, "━") + "┛\n\n");
     for(var key in avatarsInUse) {
         term(key, " [",
-            "".padEnd(carryingDiamonds[key] * 2, "🔹"),
-            "".padEnd((5 - carryingDiamonds[key]) * 2, "⬦ "),
-            "] : ", avatarsInUse[key], " ", points[key], "\n");
+            "".padEnd(carryingDiamonds[key], "*"),
+            "".padEnd((5 - carryingDiamonds[key]), "-"),
+            "] : ", avatarsInUse[key].padEnd(maxLengthName, " "), " ", `${points[key]}`.padStart(4, " "), " ", Math.round(timeLeft[key] / 1000), "s\n");
     }
 }
-
-clear();
 
 function rerender() {
     request(API_URL, (err, response, body) => {
@@ -107,7 +134,7 @@ function rerender() {
     })
 }
 
-setInterval(rerender, 1000);
+setInterval(rerender, 250);
 
 // const cellSize = 3;
 //     //"┓┗┛┏┃━"
