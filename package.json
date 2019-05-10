@@ -1,0 +1,12 @@
+{
+  "name": "diamonds-term-viewer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "indrif",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "request": "^2.88.0",
+    "terminal-kit": "^1.28.0"
+  }
+}
