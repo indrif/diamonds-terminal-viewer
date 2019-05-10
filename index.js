@@ -43,11 +43,11 @@ function getDiamond(board, x, y) {
 }
 
 function getDiamondButton(board, x, y) {
-    return board.gameObjects.find(d => d.name === "DiamondButton" && d.x === x && d.y === y);
+    return board.gameObjects.find(d => d.name === "DiamondButton" && d.position.x === x && d.position.y === y);
 }
 
 function getTeleporter(board, x, y) {
-    return board.gameObjects.find(d => d.name === "Teleporter" && d.x === x && d.y === y);
+    return board.gameObjects.find(d => d.name === "Teleporter" && d.position.x === x && d.position.y === y);
 }
 
 function getNextAvailableAvatar() {
@@ -78,12 +78,12 @@ function render(board) {
         const teleporter = getTeleporter(board, x, y);
         const button = getDiamondButton(board, x, y);
         if (base) {
-            term("B");
+            term.bold("B");
             spacesLeft -= 1;
         }
         if (bot) {
             const c = getReservedAvatar(bot)
-            term(c);
+            term.bold(c);
             spacesLeft -= c.length;
 
             points[c] = bot.score;
@@ -102,12 +102,12 @@ function render(board) {
         }
         if (button) {
             const c = "#";
-            term.red(c);
+            term.green(c);
             spacesLeft -= c.length;
         }
         if (teleporter) {
             const c = "O";
-            term.magenta(c);
+            term.bold.yellow(c);
             spacesLeft -= c.length;
         }
         term("".padEnd(spacesLeft, " "));
