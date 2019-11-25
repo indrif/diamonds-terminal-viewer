@@ -1,21 +1,7 @@
 var request = require('request');
 var term = require( 'terminal-kit' ).terminal ;
 
-//     const ret = ["┏" + "".padEnd(this.width * cellSize, "━") + "┓"];
-//     for(var y = 0; y < this.height; y++) {
-//       const line = ["┃"];
-//       for(var x = 0; x < this.width; x++) {
-//         const gameObjects = this.gameObjects.filter(g => g.x === x && g.y === y);
-//         var existing = gameObjects.map(g => g.toChar()).join("").padEnd(cellSize, " ");
-//         line.push(existing);
-//       }
-//       line.push("┃");
-//       ret.push(line.join(""));
-//     }
-//     ret.push("┗" + "".padEnd(this.width * cellSize, "━") + "┛")
-//     return ret.join("\n");
-
-const API_URL = "http://diamonds.etimo.se/api/boards/1";
+const API_URL = "http://localhost:3000/api/boards/1";
 // const BOT_AVATARS = ["🤖", "🦁", "🐙", "🦑", "🦀", "🐌", "🐥", "🦞", "🐭", "🐹", "🐰", "🐶", "🐺", "🦊", "🐵", "🐸", "🙊", "🐯", "🦁", "🐮", "🐷", "🐻", "🐼", "🐲", "🐨", "🦄"];
 const BOT_AVATARS = ["1", "2", "3", "4", "5"];
 const botAvatarForId = {};
@@ -31,23 +17,23 @@ function clear() {
 }
 
 function getBot(board, x, y) {
-    return board.bots.find(b => b.position.x === x && b.position.y === y);
+    return board.gameObjects.find(b => (b.type == "BotGameObject" || b.type == "DummyBotGameObject") && b.position.x === x && b.position.y === y);
 }
 
 function getBase(board, x, y) {
-    return board.bots.find(b => b.base.x === x && b.base.y === y);
+    return board.gameObjects.find(b => b.type == "BaseGameObject" && b.position.x === x && b.position.y === y);
 }
 
 function getDiamond(board, x, y) {
-    return board.diamonds.find(d => d.x === x && d.y === y);
+    return board.gameObjects.find(d => d.type == "DiamondGameObject" && d.position.x === x && d.position.y === y);
 }
 
 function getDiamondButton(board, x, y) {
-    return board.gameObjects.find(d => d.name === "DiamondButton" && d.position.x === x && d.position.y === y);
+    return board.gameObjects.find(d => d.type === "DiamondButtonGameObject" && d.position.x === x && d.position.y === y);
 }
 
 function getTeleporter(board, x, y) {
-    return board.gameObjects.find(d => d.name === "Teleporter" && d.position.x === x && d.position.y === y);
+    return board.gameObjects.find(d => d.type === "TeleporterGameObject" && d.position.x === x && d.position.y === y);
 }
 
 function getNextAvailableAvatar() {
@@ -55,18 +41,18 @@ function getNextAvailableAvatar() {
 }
 
 function getReservedAvatar(bot) {
-    if (!(bot.botId in botAvatarForId)) {
+    if (!(bot.id in botAvatarForId)) {
         const avatar = getNextAvailableAvatar();
-        botAvatarForId[bot.botId] = avatar;
-        avatarsInUse[avatar] = bot.name;
+        botAvatarForId[bot.id] = avatar;
+        avatarsInUse[avatar] = `${bot.id}`;
     }
-    return botAvatarForId[bot.botId];
+    return botAvatarForId[bot.id];
 }
 
 function render(board) {
     term.moveTo(1, 4);
     // term.tex
-    const cellSize = 4;
+    const cellSize = 2;
     term("┏" + "".padEnd(board.width * cellSize, "━") + "┓\n");
     for(var y = 0; y < board.height; y++) {
       term("┃");
@@ -86,9 +72,9 @@ function render(board) {
             term.bold(c);
             spacesLeft -= c.length;
 
-            points[c] = bot.score;
-            carryingDiamonds[c] = bot.diamonds;
-            timeLeft[c] = bot.millisecondsLeft;
+            points[c] = bot.properties.score;
+            carryingDiamonds[c] = bot.properties.diamonds;
+            timeLeft[c] = bot.properties.millisecondsLeft;
             maxLengthName = Math.max(maxLengthName, bot.botName);
         }
         if (diamond) {
@@ -121,6 +107,11 @@ function render(board) {
             "".padEnd((5 - carryingDiamonds[key]), "-"),
             "] : ", avatarsInUse[key].padEnd(maxLengthName, " "), " ", `${points[key]}`.padStart(4, " "), " ", Math.round(timeLeft[key] / 1000), "s\n");
     }
+    term("".padEnd(60) + "\n");
+    term("".padEnd(60) + "\n");
+    term("".padEnd(60) + "\n");
+    term("".padEnd(60) + "\n");
+    term("".padEnd(60) + "\n");
 }
 
 function rerender() {
